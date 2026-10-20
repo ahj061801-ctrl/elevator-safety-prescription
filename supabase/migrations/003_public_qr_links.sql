@@ -22,3 +22,6 @@ alter table public.prescription_qr_links enable row level security;
 alter table public.prescription_qr_rate_limits enable row level security;
 revoke all on public.prescription_qr_links from anon, authenticated;
 revoke all on public.prescription_qr_rate_limits from anon, authenticated;
+
+grant all on public.prescription_qr_links to service_role;
+grant all on public.prescription_qr_rate_limits to service_role;
