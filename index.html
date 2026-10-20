@@ -5,8 +5,11 @@
 <title>승강기 안전처방전</title>
 <style>
 :root{font-family:"Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:#202124;background:#f5f6f8}*{box-sizing:border-box}body{margin:0;padding:22px}.app{max-width:850px;margin:auto}h1{font-size:25px;margin:0 0 8px}.sub{color:#606770;line-height:1.6}.panel{background:#fff;border:1px solid #d9dde3;border-radius:14px;padding:18px;margin:14px 0}.panel h2{font-size:17px;margin:0 0 14px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}label.field-label{display:block;font-size:13px;font-weight:600}.field{display:block;width:100%;margin-top:6px;padding:11px;border:1px solid #cbd0d8;border-radius:8px;font:inherit;background:white}.place{padding:14px 0;border-top:1px solid #e2e5e9}.place-title{font-size:16px;font-weight:700}.place-desc,.muted{font-size:12px;color:#6b7280;margin-top:4px}.grades{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.grade{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;border:1px solid #d2d6dc;border-radius:9px;cursor:pointer;font-weight:600}.grade input{accent-color:#1769d2}.grade span{font-size:12px;color:#6b7280;font-weight:400}.grade.selected{border:2px solid #1769d2;background:#eef5ff}.scorecards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.scorecard{background:#f3f6fa;border-radius:10px;padding:15px}.big{font-size:28px;font-weight:750;margin-top:6px}.breakdown{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #edf0f2}.actions{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0}.btn{border:1px solid #cbd0d8;background:white;border-radius:9px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer}.btn.primary{background:#1769d2;color:white;border-color:#1769d2}#message{color:#58616c;font-size:13px;min-height:20px}.fineprint{font-size:11px;color:#6b7280;line-height:1.6}#qrPanel{display:none;text-align:center}#qr{display:flex;justify-content:center;margin:12px auto}@media(max-width:560px){body{padding:12px}.grid,.scorecards{grid-template-columns:1fr}.grades{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:14px}h1{font-size:22px}}
+
+.authbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}.auth-status{font-size:13px;color:#59616b}.table-wrap{overflow-x:auto}table.ledger{width:100%;border-collapse:collapse;font-size:13px}table.ledger th,table.ledger td{padding:9px;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}table.ledger th{background:#f3f6fa}.small-btn{padding:7px 10px;font-size:12px}.hidden{display:none!important}
 </style></head><body><main class="app">
 <h1>승강기 안전처방전</h1><p class="sub">기계실·승강로·피트의 상태를 4단계로 평가하고, 평균 건강 점수와 종합 등급을 자동 계산합니다.</p>
+<section class="panel"><h2>로그인 및 발급대장</h2><p class="muted">GitHub 계정으로 로그인한 뒤, 관리자가 등록·활성화한 사용자만 발급대장을 이용할 수 있습니다.</p><div class="authbar"><button class="btn primary" id="loginBtn" type="button">GitHub 로그인</button><button class="btn hidden" id="logoutBtn" type="button">로그아웃</button><button class="btn hidden" id="refreshLedgerBtn" type="button">발급대장 새로고침</button><span class="auth-status" id="authStatus" role="status">로그인하지 않았습니다.</span></div><p class="fineprint">PDF는 비공개 저장소에 보관되며, 같은 지사로 등록된 활성 사용자만 발급 내역과 PDF를 확인할 수 있습니다.</p></section>
 <section class="panel"><h2>기본 정보</h2><div class="grid">
 <label class="field-label">건물명 *<input id="building" class="field" placeholder="예: ○○아파트" required></label>
 <label class="field-label">승강기 번호<input id="number" class="field" placeholder="예: 0000-000"></label>
@@ -16,7 +19,8 @@
 <section class="panel"><h2>장소별 건강상태 평가</h2><p class="muted">각 장소에서 해당하는 등급 하나를 선택하세요.</p><div id="areas"></div></section>
 <section class="panel"><h2>승강기 건강 점수</h2><div class="scorecards"><div class="scorecard"><div class="muted">3개 항목 평균</div><div class="big"><span id="average">—</span> <span style="font-size:14px;font-weight:500">/ 100점</span></div></div><div class="scorecard"><div class="muted">종합 등급</div><div id="overall" class="big">미평가</div></div></div><div id="breakdown" style="margin-top:12px"></div><p class="fineprint">점수 기준: 양호 100점, 주의 A 75점, 주의 B 50점, 위험 25점. 종합 등급은 평균 점수에 따라 양호(87.5점 이상), 주의 A(62.5점 이상 87.5점 미만), 주의 B(37.5점 이상 62.5점 미만), 위험(37.5점 미만)으로 분류합니다.</p></section>
 <section class="panel"><h2>검사결과 및 관찰사항</h2><label class="field-label">검사결과 / 관찰사항<textarea id="result" class="field" rows="3" placeholder="필요한 경우 관찰사항을 입력하세요."></textarea></label><label class="field-label" style="margin-top:13px">추가 메모<textarea id="note" class="field" rows="2" placeholder="선택 입력"></textarea></label></section>
-<div class="actions"><button class="btn primary" id="printBtn" type="button">내 컴퓨터에 PDF 저장</button><button class="btn" id="qrBtn" type="button">QR 코드 생성</button><button class="btn" id="resetBtn" type="button">초기화</button></div><div id="message" role="status"></div>
+<div class="actions"><button class="btn primary" id="issueBtn" type="button">PDF 발급·대장 저장</button><button class="btn" id="printBtn" type="button">내 컴퓨터에 PDF 저장</button><button class="btn" id="qrBtn" type="button">QR 코드 생성</button><button class="btn" id="resetBtn" type="button">초기화</button></div><div id="message" role="status"></div>
+<section class="panel hidden" id="ledgerPanel"><h2>발급 내역</h2><p class="muted">최근 발급된 안전처방전 내역입니다. PDF 열람·다운로드 기록이 저장됩니다.</p><div class="table-wrap"><table class="ledger"><thead><tr><th>발급번호</th><th>발급일시</th><th>건물명</th><th>승강기 번호</th><th>평균점수</th><th>종합등급</th><th>PDF</th></tr></thead><tbody id="ledgerRows"><tr><td colspan="7">로그인 후 조회할 수 있습니다.</td></tr></tbody></table></div></section>
 <section class="panel" id="qrPanel"><h2>건강 점수 QR 코드</h2><div id="qr"></div><p class="fineprint">QR 코드에는 요약 텍스트가 담기며 PDF 파일 링크는 포함되지 않습니다.</p></section><p class="fineprint">안내: 이 도구의 점수는 참고용 건강지표이며, 법정 검사 판정이나 운행 가능 여부를 대체하지 않습니다. 실제 사용 전 기관 내부 기준에 맞는지 검토하세요.</p>
 </main><script>
 (()=>{const $=id=>document.getElementById(id),levels=[{name:'양호',score:100},{name:'주의 A',score:75},{name:'주의 B',score:50},{name:'위험',score:25}],places=[{name:'기계실',desc:'기계·브레이크 상태 및 이상 소음·진동 등'},{name:'승강로',desc:'레일·케이블 외관 및 이물질·간섭 등'},{name:'피트',desc:'물 고임·이물질 및 주요 부품 외관 상태'}],selected={},areas=$('areas');
@@ -29,6 +33,96 @@ function esc(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function print(){const d=data();if(!d.building){$('message').textContent='건물명을 입력해 주세요.';$('building').focus();return}if(!d.date){$('message').textContent='검사일자를 선택해 주세요.';$('date').focus();return}if(!d.complete){$('message').textContent='기계실·승강로·피트 3개 항목을 모두 평가해 주세요.';return}
 const rows=places.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(selected[p.name].name)+'</td><td>'+selected[p.name].score+'점</td></tr>').join(''),html='<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>승강기 안전처방전</title><style>@page{size:A4;margin:17mm}body{font-family:"Malgun Gothic",sans-serif;color:#111;font-size:12px;line-height:1.55}h1{text-align:center;font-size:23px;letter-spacing:3px;margin:0 0 22px}table{width:100%;border-collapse:collapse;table-layout:fixed;margin:12px 0}th,td{border:1px solid #555;padding:9px;text-align:left;overflow-wrap:anywhere}th{background:#f2f2f2}.meta th{width:17%}.section{border:1px solid #555;background:#f2f2f2;font-weight:bold;padding:9px;margin-top:14px}.content{border:1px solid #555;border-top:0;padding:12px;min-height:38px;white-space:pre-wrap}.result{display:flex;gap:24px;align-items:center;padding:12px;border:1px solid #555}.big{font-size:25px;font-weight:bold}.note{font-size:10px;color:#555;margin-top:18px}</style></head><body><h1>승강기 안전처방전</h1><table class="meta"><tr><th>건물명</th><td>'+esc(d.building)+'</td><th>승강기 번호</th><td>'+esc(d.number||'-')+'</td></tr><tr><th>설치장소</th><td colspan="3">'+esc(d.location||'-')+'</td></tr><tr><th>검사일자</th><td>'+esc(d.date)+'</td><th>종류</th><td>'+esc(d.kind)+'</td></tr></table><div class="section">승강기 건강 점수</div><div class="result"><div><div>전체 평균 점수</div><div class="big">'+d.average.toFixed(1)+'점 / 100점</div></div><div><div>종합 등급</div><div class="big">'+esc(d.overall)+'</div></div></div><table><thead><tr><th>평가 장소</th><th>평가 등급</th><th>환산 점수</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr><th colspan="2">3개 항목 평균</th><th>'+d.average.toFixed(1)+'점</th></tr></tfoot></table><div class="section">검사결과 및 관찰사항</div><div class="content">'+esc(d.result||'별도 관찰사항 없음.')+'</div>'+(d.note?'<div class="section">추가 메모</div><div class="content">'+esc(d.note)+'</div>':'')+'<div class="note">점수 기준: 양호 100점, 주의 A 75점, 주의 B 50점, 위험 25점. 본 점수는 참고용 지표이며 공식 검사 판정을 대체하지 않습니다.</div><script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script></body></html>';
 const w=window.open('','_blank');if(!w){$('message').textContent='팝업이 차단되었습니다. 브라우저에서 팝업을 허용한 뒤 다시 시도하세요.';return}w.document.open();w.document.write(html);w.document.close();$('message').textContent='인쇄 창에서 “PDF로 저장”을 선택하세요.'}
+
+const SUPABASE_URL='https://quznymcwlfmlimtrxyyz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_NIjrjS-s7bPZC6DXdynEHQ_UpVpo7b4';
+let sbClient=null,currentSession=null,currentProfile=null;
+function status(t){$('authStatus').textContent=t}
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.append(s)})}
+async function initAuth(){
+ try{
+  if(!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2');
+  sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+  const {data}=await sbClient.auth.getSession();currentSession=data.session;await refreshAuthState();
+  sbClient.auth.onAuthStateChange((_event,session)=>{currentSession=session;setTimeout(refreshAuthState,0)});
+ }catch(e){status('로그인 모듈을 불러오지 못했습니다. 인터넷 연결을 확인하세요.')}
+}
+async function refreshAuthState(){
+ $('loginBtn').classList.toggle('hidden',!!currentSession);$('logoutBtn').classList.toggle('hidden',!currentSession);
+ $('refreshLedgerBtn').classList.toggle('hidden',!currentSession);
+ if(!currentSession){currentProfile=null;$('ledgerPanel').classList.add('hidden');status('로그인하지 않았습니다.');return}
+ status('로그인 확인 중…');
+ try{
+  const {data:profile,error}=await sbClient.from('profiles').select('display_name,branch_id,role,active').eq('user_id',currentSession.user.id).maybeSingle();
+  if(error)throw error;currentProfile=profile;
+  if(!profile){$('ledgerPanel').classList.add('hidden');status('로그인됨 · 사용자 등록 대기. 관리자에게 지사 및 사용자 등록을 요청하세요.');return}
+  if(!profile.active){$('ledgerPanel').classList.add('hidden');status('로그인됨 · 계정 미활성 상태입니다. 관리자 승인 후 이용할 수 있습니다.');return}
+  status('로그인됨 · '+(profile.display_name||currentSession.user.email||'사용자')+' · 발급대장 이용 가능');
+  await loadLedger();
+ }catch(e){$('ledgerPanel').classList.add('hidden');status('사용자 권한을 확인하지 못했습니다. DB 설정을 확인하세요.')}
+}
+async function loginGithub(){
+ if(!sbClient)return status('로그인 모듈을 준비 중입니다.');
+ const {error}=await sbClient.auth.signInWithOAuth({provider:'github',options:{redirectTo:window.location.origin+window.location.pathname}});
+ if(error)status('로그인 시작 실패: '+error.message)
+}
+async function loadLedger(){
+ if(!currentSession||!currentProfile?.active)return;
+ $('ledgerPanel').classList.remove('hidden');$('ledgerRows').innerHTML='<tr><td colspan="7">조회 중…</td></tr>';
+ const {data,error}=await sbClient.from('prescriptions').select('id,issue_no,building_name,elevator_no,average_score,overall_grade,status,issued_at,inspection_date').order('issued_at',{ascending:false}).limit(100);
+ if(error){$('ledgerRows').innerHTML='<tr><td colspan="7">조회 실패. 데이터베이스 마이그레이션과 권한 정책을 확인하세요.</td></tr>';return}
+ $('ledgerRows').innerHTML='';
+ if(!data?.length){$('ledgerRows').innerHTML='<tr><td colspan="7">발급 내역이 없습니다.</td></tr>';return}
+ data.forEach(r=>{
+  const tr=document.createElement('tr');
+  const vals=[r.issue_no,r.issued_at?new Date(r.issued_at).toLocaleString('ko-KR'):'-',r.building_name,r.elevator_no||'-',r.average_score==null?'-':Number(r.average_score).toFixed(1)+'점',r.overall_grade||'-'];
+  vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
+  const td=document.createElement('td'),b=document.createElement('button');b.className='btn small-btn';b.type='button';b.textContent='PDF 다운로드';b.addEventListener('click',()=>downloadPdf(r.id,r.issue_no));td.append(b);tr.append(td);$('ledgerRows').append(tr)
+ })
+}
+async function downloadPdf(id,issueNo){
+ if(!currentSession)return;
+ try{
+  const res=await fetch(SUPABASE_URL+'/functions/v1/get-prescription-pdf',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+currentSession.access_token},body:JSON.stringify({prescriptionId:id})});
+  if(!res.ok)throw new Error('PDF 다운로드 실패 ('+res.status+')');
+  const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=(issueNo||'prescription')+'.pdf';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);status('PDF 다운로드를 시작했습니다.')
+ }catch(e){status(e.message||'PDF 다운로드에 실패했습니다.')}
+}
+function pdfHtml(d,issueNo){
+ const rows=places.map(p=>'<tr><td>'+esc(p.name)+'</td><td>'+esc(selected[p.name].name)+'</td><td>'+selected[p.name].score+'점</td></tr>').join('');
+ return '<div style="width:700px;padding:36px;background:#fff;color:#111;font-family:Arial,Malgun Gothic,sans-serif;font-size:14px;line-height:1.6"><h1 style="text-align:center;font-size:26px;margin-bottom:26px">승강기 안전처방전</h1><p><b>발급번호:</b> 발급대장에서 확인 · <b>검사일자:</b> '+esc(d.date)+'</p><table style="width:100%;border-collapse:collapse;margin:14px 0"><tr><th style="border:1px solid #555;padding:10px;background:#eee;text-align:left">건물명</th><td style="border:1px solid #555;padding:10px">'+esc(d.building)+'</td><th style="border:1px solid #555;padding:10px;background:#eee;text-align:left">승강기 번호</th><td style="border:1px solid #555;padding:10px">'+esc(d.number||'-')+'</td></tr><tr><th style="border:1px solid #555;padding:10px;background:#eee;text-align:left">설치장소</th><td colspan="3" style="border:1px solid #555;padding:10px">'+esc(d.location||'-')+'</td></tr><tr><th style="border:1px solid #555;padding:10px;background:#eee;text-align:left">검사 종류</th><td colspan="3" style="border:1px solid #555;padding:10px">'+esc(d.kind)+'</td></tr></table><h2>건강 점수: '+d.average.toFixed(1)+'점 / 종합 등급: '+esc(d.overall)+'</h2><table style="width:100%;border-collapse:collapse;margin:14px 0"><tr><th style="border:1px solid #555;padding:10px;background:#eee">평가 장소</th><th style="border:1px solid #555;padding:10px;background:#eee">평가 등급</th><th style="border:1px solid #555;padding:10px;background:#eee">환산 점수</th></tr>'+rows+'<tr><th colspan="2" style="border:1px solid #555;padding:10px">3개 항목 평균</th><th style="border:1px solid #555;padding:10px">'+d.average.toFixed(1)+'점</th></tr></table><h3 style="padding:9px;background:#eee;border:1px solid #555">검사결과 및 관찰사항</h3><div style="border:1px solid #555;padding:12px;white-space:pre-wrap;min-height:40px">'+esc(d.result||'별도 관찰사항 없음.')+'</div>'+(d.note?'<h3 style="padding:9px;background:#eee;border:1px solid #555">추가 메모</h3><div style="border:1px solid #555;padding:12px;white-space:pre-wrap">'+esc(d.note)+'</div>':'')+'<p style="font-size:11px;color:#555;margin-top:20px">점수는 참고용 건강지표이며 법정 검사 판정이나 운행 가능 여부를 대체하지 않습니다.</p></div>'
+}
+async function issueAndArchive(){
+ if(!sbClient||!currentSession){status('PDF 발급·보관을 위해 먼저 GitHub 로그인을 해주세요.');return}
+ if(!currentProfile?.active){status('활성화된 사용자 계정만 발급할 수 있습니다.');return}
+ const d=data();
+ if(!d.building){status('건물명을 입력해 주세요.');$('building').focus();return}
+ if(!d.date){status('검사일자를 선택해 주세요.');$('date').focus();return}
+ if(!d.complete){status('기계실·승강로·피트 3개 항목을 모두 평가해 주세요.');return}
+ if(!confirm('입력한 검사 정보와 PDF를 비공개 발급대장에 저장하시겠습니까?'))return;
+ const btn=$('issueBtn');btn.disabled=true;btn.textContent='PDF 생성 및 저장 중…';
+ let node;
+ try{
+  if(!window.html2pdf)await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+  node=document.createElement('div');node.style.position='fixed';node.style.left='-10000px';node.style.top='0';node.innerHTML=pdfHtml(d);document.body.append(node);
+  const blob=await window.html2pdf().set({margin:8,filename:'prescription.pdf',image:{type:'jpeg',quality:0.96},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(node).outputPdf('blob');
+  const base64=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=reject;reader.readAsDataURL(blob)});
+  const grades={};places.forEach(p=>grades[p.name]={grade:selected[p.name].name,score:selected[p.name].score});
+  const idempotencyKey=crypto.randomUUID();
+  const res=await fetch(SUPABASE_URL+'/functions/v1/issue-prescription',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+currentSession.access_token},body:JSON.stringify({idempotencyKey,prescription:{building_name:d.building,elevator_no:d.number,location_text:d.location,inspection_date:$('date').value,inspection_type:d.kind,grade_machine_room:selected['기계실'].score,grade_shaft:selected['승강로'].score,grade_pit:selected['피트'].score,average_score:Number(d.average.toFixed(2)),overall_grade:d.overall,observations:{result:d.result,note:d.note,grades}},pdfBase64})});
+  const result=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(result.error==='inactive_or_unregistered_user'?'계정이 등록 또는 활성화되지 않았습니다. 관리자에게 문의하세요.':result.error==='server_not_configured'?'서버 설정이 아직 완료되지 않았습니다. 관리자 설정이 필요합니다.':'발급 저장 실패: '+(result.error||res.status));
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=result.issueNo+'.pdf';document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+  status('발급 완료 · '+result.issueNo+' · PDF 저장 및 발급대장 등록 완료');await loadLedger()
+ }catch(e){status(e.message||'PDF 발급 중 오류가 발생했습니다.')}
+ finally{if(node)node.remove();btn.disabled=false;btn.textContent='PDF 발급·대장 저장'}
+}
+$('loginBtn').addEventListener('click',loginGithub);
+$('logoutBtn').addEventListener('click',async()=>{if(sbClient)await sbClient.auth.signOut()});
+$('refreshLedgerBtn').addEventListener('click',loadLedger);
+$('issueBtn').addEventListener('click',issueAndArchive);
+initAuth();
+
 $('printBtn').addEventListener('click',print);$('qrBtn').addEventListener('click',async()=>{const d=data();if(!d.building){$('message').textContent='건물명을 입력해 주세요.';$('building').focus();return}if(!d.complete){$('message').textContent='QR 생성 전에 3개 장소의 등급을 모두 선택해 주세요.';return}const payload='승강기 안전처방전\n건물명: '+d.building+'\n승강기 번호: '+(d.number||'-')+'\n설치장소: '+(d.location||'-')+'\n검사일자: '+d.date+'\n기계실: '+selected['기계실'].name+' '+selected['기계실'].score+'점\n승강로: '+selected['승강로'].name+' '+selected['승강로'].score+'점\n피트: '+selected['피트'].name+' '+selected['피트'].score+'점\n평균: '+d.average.toFixed(1)+'점\n종합 등급: '+d.overall+'\n검사결과: '+(d.result||'별도 관찰사항 없음.');$('qrPanel').style.display='block';$('qr').innerHTML='';try{if(!window.QRCode)await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});new QRCode($('qr'),{text:payload,width:220,height:220});$('message').textContent='요약 텍스트를 담은 QR 코드가 생성되었습니다.'}catch(e){$('message').textContent='QR 생성 기능을 불러오지 못했습니다. 인터넷 연결을 확인하세요.'}});
 $('resetBtn').addEventListener('click',()=>{['building','number','location','result','note'].forEach(id=>$(id).value='');$('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);$('kind').value='정기검사';Object.keys(selected).forEach(k=>delete selected[k]);areas.querySelectorAll('input').forEach(i=>i.checked=false);areas.querySelectorAll('.grade').forEach(l=>l.classList.remove('selected'));$('qrPanel').style.display='none';$('message').textContent='입력 내용이 초기화되었습니다.';render()});render()})();
 </script></body></html>
