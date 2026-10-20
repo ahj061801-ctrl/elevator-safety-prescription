@@ -1,21 +1,25 @@
 # 승강기 안전처방전
 
-기존 GitHub Pages 기반 안전처방전 작성 화면과, 별도 Supabase 백엔드를 이용한 비공개 PDF 보관·발급대장 시스템을 위한 저장소입니다.
+GitHub Pages 기반 안전처방전 작성 화면에 GitHub 계정 로그인, PDF 자동 보관, 발급대장 조회 기능을 연결하기 위한 저장소입니다.
 
 ## 현재 구성
 - `index.html`: 기존 처방전 작성 화면
-- `docs/issuance-system-design.md`: 아키텍처 및 운영 설계
-- `supabase/migrations/001_initial_schema.sql`: 발급대장 DB와 RLS 초기 스키마
-- `supabase/migrations/002_issue_number_allocator.sql`: 서버 전용 발급번호 할당 함수
-- `supabase/functions/issue-prescription/index.ts`: 인증 기반 발급·PDF 보관 함수
-- `supabase/functions/get-prescription-pdf/index.ts`: 권한 확인 후 PDF 다운로드 함수
-- `supabase/SETUP.md`: Supabase 초기 설정 체크리스트
+- `docs/issuance-system-design.md`: 구현 범위 및 운영 설계
+- `supabase/migrations/`: 발급대장 DB 스키마
+- `supabase/functions/`: 발급 및 PDF 다운로드용 Edge Functions
+- `supabase/SETUP.md`: Supabase 및 GitHub OAuth 설정 안내
 
-## 중요: 아직 운영 연결 전
-코드는 백엔드 초기 구현안이며, Supabase 프로젝트·비공개 Storage 버킷·인증 계정·비밀 환경변수는 아직 이 저장소에서 생성할 수 없습니다. 설정을 마치고 프런트엔드에 로그인/발급 API 연결을 구현하기 전까지 현재 공개 웹앱은 기존의 브라우저 PDF 저장 방식으로 동작합니다.
+## 목표 사용 방식
+- 검사원은 GitHub 계정으로 로그인
+- 관리자가 등록한 활성 사용자는 지사 발급대장 전체 조회 가능
+- 발급 건 상세 확인, PDF 열기 및 다운로드
+- 새 처방전 발급 시 PDF와 발급 정보 자동 저장
 
-## 보안 주의
-- 이 저장소는 공개 저장소이므로 실제 검사자료, PDF, 인증정보, 서비스 역할 키를 절대 커밋하지 마세요.
-- 운영 전 기관의 외부 클라우드 사용 승인을 확인하세요.
-- 운영 전 RLS, Storage 정책, 발급 중복 요청, 업로드 실패/재시도, 권한 회수 테스트를 수행하세요.
-- Supabase service-role key는 Edge Function의 서버 비밀 환경변수에만 저장해야 합니다.
+## 현재 상태
+백엔드 초기 파일과 설정 안내는 저장되어 있지만, Supabase 프로젝트 생성·배포 및 웹 화면 연결은 아직 완료되지 않았습니다. 따라서 현재 공개 웹앱은 기존의 브라우저 PDF 저장 방식으로 동작합니다.
+
+## 주의
+- GitHub Pages는 로그인 여부를 자동으로 제한하지 않으므로 웹앱에서 OAuth 로그인을 직접 연결해야 합니다.
+- 실제 PDF는 공개 GitHub 저장소에 올리지 않습니다. PDF는 비공개 Storage에 저장합니다.
+- service-role key와 비밀번호는 GitHub 저장소나 브라우저 코드에 넣지 않습니다.
+- 실제 검사자료를 쓰기 전에 기관의 외부 클라우드 사용 규정을 확인하고, 그 전에는 테스트 자료만 사용하세요.
