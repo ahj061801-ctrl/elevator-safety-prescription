@@ -1,6 +1,6 @@
 // Supabase Edge Function: issue-prescription
-// Client sends { idempotencyKey, prescription, pdfBase64 }.
-// Never expose SUPABASE_SERVICE_ROLE_KEY to the browser.
+// Stores PDF files in a separate PRIVATE GitHub repository.
+// GitHub token and repository name must be configured as Supabase Edge Function secrets.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -23,6 +23,32 @@ function decodeBase64(value: string): Uint8Array {
   return bytes;
 }
 
+function koreaDate(): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return get("year") + "-" + get("month") + "-" + get("day");
+}
+
+async function githubRequest(path: string, init: RequestInit = {}) {
+  const token = Deno.env.get("GITHUB_PDF_TOKEN");
+  const repo = Deno.env.get("GITHUB_PDF_REPO");
+  if (!token || !repo || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) {
+    throw new Error("github_storage_not_configured");
+  }
+  return await fetch("https://api.github.com/repos/" + repo + "/contents/" + path, {
+    ...init,
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + token,
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json",
+      ...(init.headers ?? {}),
+    },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -37,7 +63,7 @@ Deno.serve(async (req) => {
 
   const token = authHeader.slice("Bearer ".length);
   const userClient = createClient(url, anonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
+    global: { headers: { Authorization: "Bearer " + token } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const admin = createClient(url, serviceKey, {
@@ -66,7 +92,7 @@ Deno.serve(async (req) => {
   const buildingName = String(p.building_name ?? "").trim();
   if (!buildingName || buildingName.length > 300) return json({ error: "invalid_building_name" }, 400);
 
-  const date = new Date().toISOString().slice(0, 10);
+  const date = koreaDate();
   const { data: existing } = await admin.from("prescriptions")
     .select("id, issue_no, status").eq("issued_by", authData.user.id)
     .eq("idempotency_key", idempotencyKey).maybeSingle();
@@ -112,16 +138,32 @@ Deno.serve(async (req) => {
   }
 
   const fileId = crypto.randomUUID();
-  const storagePath = `${profile.branch_id}/${record.id}/${fileId}.pdf`;
-  const { error: uploadError } = await admin.storage.from("prescription-pdfs")
-    .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
-  if (uploadError) {
+  const safeIssueNo = String(issueNo).replace(/[^A-Za-z0-9._-]/g, "_");
+  const storagePath = "pdfs/" + date.slice(0, 4) + "/" + date.slice(5, 7) + "/" + safeIssueNo + "-" + fileId + ".pdf";
+
+  let githubResponse: Response;
+  try {
+    githubResponse = await githubRequest(encodeURI(storagePath), {
+      method: "PUT",
+      body: JSON.stringify({
+        message: "Store issued elevator safety prescription " + issueNo,
+        content: pdfBase64,
+        branch: Deno.env.get("GITHUB_PDF_BRANCH") || "main",
+      }),
+    });
+  } catch {
+    await admin.from("prescriptions").update({ status: "failed" }).eq("id", record.id);
+    return json({ error: "github_storage_not_configured" }, 500);
+  }
+
+  if (!githubResponse.ok) {
     await admin.from("prescriptions").update({ status: "failed" }).eq("id", record.id);
     await admin.from("prescription_events").insert({
       branch_id: profile.branch_id, prescription_id: record.id, actor_id: authData.user.id,
-      event_type: "issue_failed", reason: "storage_upload_failed",
+      event_type: "issue_failed", reason: "github_upload_failed",
+      metadata: { github_status: githubResponse.status },
     });
-    return json({ error: "pdf_storage_failed", issueNo }, 500);
+    return json({ error: "pdf_storage_failed", issueNo }, 502);
   }
 
   const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
@@ -131,7 +173,6 @@ Deno.serve(async (req) => {
     file_size_bytes: bytes.length, sha256_hex: hashHex,
   });
   if (fileError) {
-    await admin.storage.from("prescription-pdfs").remove([storagePath]);
     await admin.from("prescriptions").update({ status: "failed" }).eq("id", record.id);
     return json({ error: "file_metadata_save_failed", issueNo }, 500);
   }
@@ -147,7 +188,7 @@ Deno.serve(async (req) => {
   await admin.from("prescription_events").insert({
     branch_id: profile.branch_id, prescription_id: record.id, actor_id: authData.user.id,
     event_type: "issued", request_id: idempotencyKey,
-    metadata: { issue_no: issueNo, file_size_bytes: bytes.length },
+    metadata: { issue_no: issueNo, file_size_bytes: bytes.length, storage: "private_github_repository" },
   });
   return json({ id: record.id, issueNo, status: "completed" });
 });
