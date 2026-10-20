@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("ALLOWED_ORIGIN") ?? "https://ahj061801-ctrl.github.io",
-  "Access-Control-Allow-Headers": "content-type",
+  "Access-Control-Allow-Headers": "content-type, apikey",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 function json(body: unknown, status = 200) {
